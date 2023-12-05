@@ -1,0 +1,13 @@
+diff --git a/wincon/Makefile.vc b/wincon/Makefile.vc
+index 80c4689..87b1caf 100644
+--- a/wincon/Makefile.vc
++++ b/wincon/Makefile.vc
+@@ -27,7 +27,7 @@ CC		= cl.exe -nologo
+ CFLAGS		= -Z7 -DPDCDEBUG
+ LDFLAGS		= -debug -pdb:none
+ !else
+-CFLAGS		= -O1
++CFLAGS		= -O1 -MD
+ LDFLAGS		=
+ !endif
+ 
