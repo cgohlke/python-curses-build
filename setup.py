@@ -9,6 +9,8 @@ define_macros = [
     ('PDC_WIDE', None),
     ('HAVE_NCURSESW', None),
     ('HAVE_TERM_H', None),
+    ('HAVE_CURSES_H', None),
+    ('HAVE_PANEL_H', None),
     ('HAVE_CURSES_IS_TERM_RESIZED', None),
     ('HAVE_CURSES_RESIZE_TERM', None),
     ('HAVE_CURSES_TYPEAHEAD', None),
@@ -32,7 +34,7 @@ srcdir = 'py%i%i//' % sys.version_info[:2]
 
 setup(
     name='python-curses',
-    version='2.2.2',
+    version='2.2.3',
     description='Support for the standard curses module on Windows',
     url='https://github.com/python/cpython/issues/47138',
     license='PSF2',
@@ -66,6 +68,7 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Software Development',
         'Topic :: Software Development :: Libraries :: Python Modules',
