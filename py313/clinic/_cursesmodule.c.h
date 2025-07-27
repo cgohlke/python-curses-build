@@ -768,7 +768,7 @@ PyDoc_STRVAR(_curses_window_getch__doc__,
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
     {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
 
-static int
+static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x);
 
@@ -779,7 +779,6 @@ _curses_window_getch(PyCursesWindowObject *self, PyObject *args)
     int group_right_1 = 0;
     int y = 0;
     int x = 0;
-    int _return_value;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
@@ -794,11 +793,7 @@ _curses_window_getch(PyCursesWindowObject *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "_curses.window.getch requires 0 to 2 arguments");
             goto exit;
     }
-    _return_value = _curses_window_getch_impl(self, group_right_1, y, x);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
+    return_value = _curses_window_getch_impl(self, group_right_1, y, x);
 
 exit:
     return return_value;
@@ -3693,25 +3688,55 @@ PyDoc_STRVAR(_curses_resizeterm__doc__,
     {"resizeterm", _PyCFunction_CAST(_curses_resizeterm), METH_FASTCALL, _curses_resizeterm__doc__},
 
 static PyObject *
-_curses_resizeterm_impl(PyObject *module, int nlines, int ncols);
+_curses_resizeterm_impl(PyObject *module, short nlines, short ncols);
 
 static PyObject *
 _curses_resizeterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int nlines;
-    int ncols;
+    short nlines;
+    short ncols;
 
     if (!_PyArg_CheckPositional("resizeterm", nargs, 2, 2)) {
         goto exit;
     }
-    nlines = PyLong_AsInt(args[0]);
-    if (nlines == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            nlines = (short) ival;
+        }
     }
-    ncols = PyLong_AsInt(args[1]);
-    if (ncols == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            ncols = (short) ival;
+        }
     }
     return_value = _curses_resizeterm_impl(module, nlines, ncols);
 
@@ -3744,25 +3769,55 @@ PyDoc_STRVAR(_curses_resize_term__doc__,
     {"resize_term", _PyCFunction_CAST(_curses_resize_term), METH_FASTCALL, _curses_resize_term__doc__},
 
 static PyObject *
-_curses_resize_term_impl(PyObject *module, int nlines, int ncols);
+_curses_resize_term_impl(PyObject *module, short nlines, short ncols);
 
 static PyObject *
 _curses_resize_term(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int nlines;
-    int ncols;
+    short nlines;
+    short ncols;
 
     if (!_PyArg_CheckPositional("resize_term", nargs, 2, 2)) {
         goto exit;
     }
-    nlines = PyLong_AsInt(args[0]);
-    if (nlines == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            nlines = (short) ival;
+        }
     }
-    ncols = PyLong_AsInt(args[1]);
-    if (ncols == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            ncols = (short) ival;
+        }
     }
     return_value = _curses_resize_term_impl(module, nlines, ncols);
 
@@ -4318,4 +4373,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=96887782374f070a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39a35d730a47ea72 input=a9049054013a1b77]*/

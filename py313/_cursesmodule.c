@@ -141,7 +141,7 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-#if NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
+#if defined(HAVE_NCURSESW) && NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
@@ -681,7 +681,8 @@ Window_TwoArgNoReturnFunction(wresize, int, "ii;lines,columns")
 /* Allocation and deallocation of Window Objects */
 
 static PyObject *
-PyCursesWindow_New(WINDOW *win, const char *encoding)
+PyCursesWindow_New(WINDOW *win, const char *encoding,
+                   PyCursesWindowObject *orig)
 {
     PyCursesWindowObject *wo;
 
@@ -712,6 +713,8 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
         PyErr_NoMemory();
         return NULL;
     }
+    wo->orig = orig;
+    Py_XINCREF(orig);
     return (PyObject *)wo;
 }
 
@@ -721,6 +724,7 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
     if (wo->win != stdscr) delwin(wo->win);
     if (wo->encoding != NULL)
         PyMem_Free(wo->encoding);
+    Py_XDECREF(wo->orig);
     PyObject_Free(wo);
 }
 
@@ -1324,7 +1328,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL, self);
 }
 
 /*[clinic input]
@@ -1396,7 +1400,7 @@ _curses_window_getbkgd_impl(PyCursesWindowObject *self)
 }
 
 /*[clinic input]
-_curses.window.getch -> int
+_curses.window.getch
 
     [
     y: int
@@ -1413,10 +1417,10 @@ keypad keys and so on return numbers higher than 256.  In no-delay mode, -1
 is returned if there is no input, else getch() waits until a key is pressed.
 [clinic start generated code]*/
 
-static int
+static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=980aa6af0c0ca387 input=bb24ebfb379f991f]*/
+/*[clinic end generated code: output=e1639e87d545e676 input=73f350336b1ee8c8]*/
 {
     int rtn;
 
@@ -1429,7 +1433,17 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
     }
     Py_END_ALLOW_THREADS
 
-    return rtn;
+    if (rtn == ERR) {
+        // We suppress ERR returned by wgetch() in nodelay mode
+        // after we handled possible interruption signals.
+        if (PyErr_CheckSignals()) {
+            return NULL;
+        }
+        // ERR is an implementation detail, so to be on the safe side,
+        // we forcibly set the return value to -1 as documented above.
+        rtn = -1;
+    }
+    return PyLong_FromLong(rtn);
 }
 
 /*[clinic input]
@@ -2351,7 +2365,7 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, self->encoding);
+    return (PyObject *)PyCursesWindow_New(win, self->encoding, self);
 }
 
 /*[clinic input]
@@ -3099,7 +3113,7 @@ _curses_getwin(PyObject *module, PyObject *file)
         PyErr_SetString(PyCursesError, catchall_NULL);
         goto error;
     }
-    res = PyCursesWindow_New(win, NULL);
+    res = PyCursesWindow_New(win, NULL, NULL);
 
 error:
     fclose(fp);
@@ -3272,7 +3286,7 @@ _curses_initscr_impl(PyObject *module)
 
     if (initialised) {
         wrefresh(stdscr);
-        return (PyObject *)PyCursesWindow_New(stdscr, NULL);
+        return (PyObject *)PyCursesWindow_New(stdscr, NULL, NULL);
     }
 
     win = initscr();
@@ -3364,7 +3378,7 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
 
-    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
+    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL, NULL);
     screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
 }
@@ -3391,17 +3405,20 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     if (fd == -1) {
         PyObject* sys_stdout;
 
-        sys_stdout = PySys_GetObject("stdout");
+        if (_PySys_GetOptionalAttrString("stdout", &sys_stdout) < 0) {
+            return NULL;
+        }
 
         if (sys_stdout == NULL || sys_stdout == Py_None) {
             PyErr_SetString(
                 PyCursesError,
                 "lost sys.stdout");
+            Py_XDECREF(sys_stdout);
             return NULL;
         }
 
         fd = PyObject_AsFileDescriptor(sys_stdout);
-
+        Py_DECREF(sys_stdout);
         if (fd == -1) {
             return NULL;
         }
@@ -3704,7 +3721,10 @@ static int
 _curses_napms_impl(PyObject *module, int ms)
 /*[clinic end generated code: output=5f292a6a724491bd input=c6d6e01f2f1df9f7]*/
 {
-    PyCursesInitialised;
+    if (initialised != TRUE) {
+        PyErr_SetString(PyCursesError, "must call initscr() first");
+        return -1;
+    }
 
     return napms(ms);
 }
@@ -3737,7 +3757,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL, NULL);
 }
 
 /*[clinic input]
@@ -3776,7 +3796,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL, NULL);
 }
 
 /*[clinic input]
@@ -4087,9 +4107,9 @@ NoArgNoReturnFunctionBody(resetty)
 /*[clinic input]
 _curses.resizeterm
 
-    nlines: int
+    nlines: short
         Height.
-    ncols: int
+    ncols: short
         Width.
     /
 
@@ -4100,8 +4120,8 @@ window dimensions (in particular the SIGWINCH handler).
 [clinic start generated code]*/
 
 static PyObject *
-_curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
-/*[clinic end generated code: output=56d6bcc5194ad055 input=0fca02ebad5ffa82]*/
+_curses_resizeterm_impl(PyObject *module, short nlines, short ncols)
+/*[clinic end generated code: output=4de3abab50c67f02 input=414e92a63e3e9899]*/
 {
     PyObject *result;
 
@@ -4123,9 +4143,9 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
 /*[clinic input]
 _curses.resize_term
 
-    nlines: int
+    nlines: short
         Height.
-    ncols: int
+    ncols: short
         Width.
     /
 
@@ -4139,8 +4159,8 @@ without additional interaction with the application.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_resize_term_impl(PyObject *module, int nlines, int ncols)
-/*[clinic end generated code: output=9e26d8b9ea311ed2 input=2197edd05b049ed4]*/
+_curses_resize_term_impl(PyObject *module, short nlines, short ncols)
+/*[clinic end generated code: output=46c6d749fa291dbd input=276afa43d8ea7091]*/
 {
     PyObject *result;
 

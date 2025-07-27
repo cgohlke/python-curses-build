@@ -5,7 +5,7 @@ on:
 
 env:
   CIBW_TEST_COMMAND: python -c"import curses"
-  CIBW_SKIP: "pp* cp36* cp37* cp38*"
+  CIBW_SKIP: "pp* cp36* cp37* cp38* cp39* cp310*"
   MSBUILDTREATHIGHERTOOLSVERSIONASCURRENT: 1
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2022]
+        os: [windows-latest]
     env:
       VS_PLATFORM: x64
       OPENSSL_CONFIG: VC-WIN64A-masm
@@ -25,18 +25,19 @@ jobs:
           arch: amd64
       - run: build_pdcurses.cmd
         shell: cmd
-      - uses: pypa/cibuildwheel@v2.21.1
+      - uses: pypa/cibuildwheel@v3.1.1
         env:
           CIBW_ARCHS_WINDOWS: AMD64
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
+          name: wheels-win-amd64
   build_x86:
     name: Build x86 wheels
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2022]
+        os: [windows-latest]
     env:
       VS_PLATFORM: Win32
       OPENSSL_CONFIG: VC-WIN32
@@ -47,18 +48,19 @@ jobs:
           arch: x86
       - run: build_pdcurses.cmd
         shell: cmd
-      - uses: pypa/cibuildwheel@v2.21.1
+      - uses: pypa/cibuildwheel@v3.1.1
         env:
           CIBW_ARCHS_WINDOWS: x86
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
+          name: wheels-win32
   build_arm64:
     name: Build ARM64 wheels
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2022]
+        os: [windows-latest]
     env:
       VS_PLATFORM: ARM64
       OPENSSL_CONFIG: VC-WIN64-ARM
@@ -69,10 +71,10 @@ jobs:
           arch: amd64_arm64
       - run: build_pdcurses.cmd
         shell: cmd
-      - uses: pypa/cibuildwheel@v2.21.1
+      - uses: pypa/cibuildwheel@v3.1.1
         env:
-          CIBW_SKIP: "pp* cp36* cp37* cp38* cp39* cp310*"
           CIBW_ARCHS_WINDOWS: ARM64
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
+          name: wheels-win-arm64
