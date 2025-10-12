@@ -19,13 +19,13 @@ jobs:
       VS_PLATFORM: x64
       OPENSSL_CONFIG: VC-WIN64A-masm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: amd64
       - run: build_pdcurses.cmd
         shell: cmd
-      - uses: pypa/cibuildwheel@v3.1.1
+      - uses: pypa/cibuildwheel@v3.2.1
         env:
           CIBW_ARCHS_WINDOWS: AMD64
       - uses: actions/upload-artifact@v4
@@ -42,13 +42,13 @@ jobs:
       VS_PLATFORM: Win32
       OPENSSL_CONFIG: VC-WIN32
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x86
       - run: build_pdcurses.cmd
         shell: cmd
-      - uses: pypa/cibuildwheel@v3.1.1
+      - uses: pypa/cibuildwheel@v3.2.1
         env:
           CIBW_ARCHS_WINDOWS: x86
       - uses: actions/upload-artifact@v4
@@ -65,13 +65,13 @@ jobs:
       VS_PLATFORM: ARM64
       OPENSSL_CONFIG: VC-WIN64-ARM
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: amd64_arm64
       - run: build_pdcurses.cmd
         shell: cmd
-      - uses: pypa/cibuildwheel@v3.1.1
+      - uses: pypa/cibuildwheel@v3.2.1
         env:
           CIBW_ARCHS_WINDOWS: ARM64
       - uses: actions/upload-artifact@v4

@@ -34,7 +34,7 @@ srcdir = 'py%i%i//' % sys.version_info[:2]
 
 setup(
     name='python-curses',
-    version='2.2.4',
+    version='2.2.5',
     description='Support for the standard curses module on Windows',
     url='https://github.com/python/cpython/issues/47138',
     license='PSF2',
@@ -64,8 +64,6 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: C',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
